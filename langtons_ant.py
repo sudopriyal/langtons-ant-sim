@@ -1,4 +1,3 @@
-import random
 import pygame
 from collections import defaultdict
 
