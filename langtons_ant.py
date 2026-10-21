@@ -10,6 +10,10 @@ pygame.init()
 
 WIDTH, HEIGHT = 1280, 900
 PANEL_WIDTH = 360
+MIN_CANVAS_WIDTH = 300
+PANEL_PADDING = 20
+PANEL_CONTENT_HEIGHT = 870
+SCROLL_SPEED = 40
 FPS = 60
 
 screen = pygame.display.set_mode((WIDTH, HEIGHT), pygame.RESIZABLE)
@@ -83,6 +87,8 @@ ant_y = 0
 direction = 0
 steps = 0
 
+panel_scroll = 0
+
 paused = True
 speed = 120
 zoom = 8
@@ -102,6 +108,9 @@ input_values = {"x": "0", "y": "0"}
 # ==================================================
 # HELPERS
 # ==================================================
+
+def panel_y(y):
+    return y - panel_scroll
 
 def palette():
     return LIGHT_PALETTE if theme_name == "Light" else DARK_PALETTE
@@ -174,7 +183,11 @@ def button(surface, rect, label, active=False):
 
 def panel_title(surface, label, y, x):
     c = colors()
-    text(surface, label.upper(), (x + 20, y), c["muted"], SMALL)
+    text(
+        surface, label.upper(),
+        (x + 20, panel_y(y)),
+        c["muted"], SMALL
+    )
 
 
 def draw_slider(surface, rect, value, minimum, maximum):
@@ -220,34 +233,41 @@ while running:
     # All controls are placed relative to the panel.
     px = canvas_width
 
-    play_rect = pygame.Rect(px + 20, 100, 154, 42)
-    step_rect = pygame.Rect(px + 186, 100, 154, 42)
-    reset_rect = pygame.Rect(px + 20, 151, 320, 38)
+    play_rect = pygame.Rect(px + 20, panel_y(100), 154, 42)
+    step_rect = pygame.Rect(px + 186, panel_y(100), 154, 42)
+    reset_rect = pygame.Rect(px + 20, panel_y(151), 320, 38)
 
-    speed_rect = pygame.Rect(px + 24, 240, 310, 8)
-    zoom_rect = pygame.Rect(px + 24, 310, 310, 8)
+    speed_rect = pygame.Rect(px + 24, panel_y(240), 310, 8)
+    zoom_rect = pygame.Rect(px + 24, panel_y(310), 310, 8)
 
-    theme_rect = pygame.Rect(px + 20, 344, 154, 38)
-    grid_rect = pygame.Rect(px + 186, 344, 154, 38)
+    theme_rect = pygame.Rect(px + 20, panel_y(344), 154, 38)
+    grid_rect = pygame.Rect(px + 186, panel_y(344), 154, 38)
 
-    trail_rect = pygame.Rect(px + 20, 405, 320, 38)
+    trail_rect = pygame.Rect(px + 20, panel_y(405), 320, 38)
 
     swatches = []
-    swatch_y = 480
     for i in range(len(palette())):
         col = i % 3
         row = i // 3
         swatches.append(
-            pygame.Rect(px + 22 + col * 108, swatch_y + row * 43, 96, 34)
+            pygame.Rect(
+                px + 22 + col * 108,
+                panel_y(480 + row * 43),
+                96, 34
+            )
         )
 
-    x_rect = pygame.Rect(px + 20, 590, 145, 35)
-    y_rect = pygame.Rect(px + 186, 590, 154, 35)
+    x_rect = pygame.Rect(px + 20, panel_y(590), 145, 35)
+    y_rect = pygame.Rect(px + 186, panel_y(590), 154, 35)
 
     direction_rects = []
     for i in range(4):
         direction_rects.append(
-            pygame.Rect(px + 20 + i * 82, 665, 74, 35)
+            pygame.Rect(
+                px + 20 + i * 82,
+                panel_y(665),
+                74, 35
+            )
         )
 
     for event in pygame.event.get():
@@ -351,11 +371,6 @@ while running:
                 else:
                     input_focus = None
 
-            elif event.button == 4:
-                zoom = min(24, zoom + 1)
-            elif event.button == 5:
-                zoom = max(3, zoom - 1)
-
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 dragging_speed = False
@@ -367,6 +382,20 @@ while running:
                 speed = slider_value(mx, speed_rect, 1, 2000)
             if dragging_zoom:
                 zoom = slider_value(mx, zoom_rect, 3, 24)
+
+        elif event.type == pygame.MOUSEWHEEL:
+            mx, my = pygame.mouse.get_pos()
+
+            if mx >= canvas_width:
+                panel_scroll = max(
+                    0,
+                    min(
+                        max(0, PANEL_CONTENT_HEIGHT - H),
+                        panel_scroll - event.y * SCROLL_SPEED
+                    )
+                )
+            else:
+                zoom = max(3, min(24, zoom + event.y))
 
     # Update coordinate fields after edits are committed.
     input_values["x"] = str(start_x) if input_focus != "x" else input_values["x"]
@@ -454,26 +483,31 @@ while running:
         (canvas_width, 0, PANEL_WIDTH, H)
     )
 
-    text(screen, "ANT / LAB", (px + 20, 20), c["text"], TITLE)
-    text(screen, "CELLULAR AUTOMATON", (px + 20, 54), c["muted"], SMALL)
+    panel_clip = pygame.Rect(
+        canvas_width, 0,
+        W - canvas_width, H
+    )
+    screen.set_clip(panel_clip)
+
+    text(screen, "ANT / LAB", (px + 20, panel_y(20)), c["text"], TITLE)
+    text(screen, "CELLULAR AUTOMATON", (px + 20, panel_y(54)), c["muted"], SMALL)
 
     status = "PAUSED" if paused else "RUNNING"
     status_color = ANT_COLOR if paused else (50, 175, 115)
-    text(screen, f"● {status}", (px + 20, 76), status_color, SMALL)
+    text(screen, f"● {status}", (px + 20, panel_y(76)), status_color, SMALL)
 
     button(screen, play_rect, "RESUME" if paused else "PAUSE")
     button(screen, step_rect, "STEP  +1")
     button(screen, reset_rect, "RESET  [R]")
 
-    panel_title(screen, "SIMULATION SPEED", 190, px)
-    text(screen, f"{speed} steps / frame", (px + 20, 211))
+    panel_title(screen, "SIMULATION SPEED", 195, px)
+    text(screen, f"{speed} steps / frame", (px + 20, panel_y(211)))
     draw_slider(screen, speed_rect, speed, 1, 2000)
 
-    text(screen, "1", (speed_rect.x, 253), c["muted"], SMALL)
-    text(screen, "2000", (speed_rect.right - 36, 253), c["muted"], SMALL)
+    text(screen, "2000", (speed_rect.right - 36, panel_y(253)), c["muted"], SMALL)  
 
     panel_title(screen, "CANVAS ZOOM", 260, px)
-    text(screen, f"{zoom} px / cell", (px + 20, 278))
+    text(screen, f"{zoom} px / cell", (px + 20, panel_y(278)))
     draw_slider(screen, zoom_rect, zoom, 3, 24)
 
     button(screen, theme_rect, f"THEME: {theme_name.upper()}")
@@ -505,7 +539,7 @@ while running:
         image = SMALL.render(name, True, label_color)
         screen.blit(image, image.get_rect(center=rect.center))
 
-    panel_title(screen, "Starting coordinates (apply with reset)", 560, px)
+    panel_title(screen, "Starting coordinates (apply with reset)", 570, px)
 
     pygame.draw.rect(
         screen, c["surface"], x_rect, border_radius=7
@@ -536,18 +570,11 @@ while running:
     # Live statistics
     panel_title(screen, "Live statistics", 720, px)
     text(screen, f"STEPS       {steps:,}", (px + 20, 744), c["text"], BIG)
-    text(
-        screen, f"BLACK CELLS {sum(grid.values()):,}",
-        (px + 20, 776)
-    )
-    text(screen, f"ANT X       {ant_x}", (px + 20, 800))
-    text(screen, f"ANT Y       {ant_y}", (px + 20, 822))
-    text(
-        screen,
-        "SPACE pause | RIGHT single step | R reset",
-        (px + 20, H - 27), c["muted"], SMALL
-    )
-
+    text(screen, f"STEPS       {steps:,}", (px + 20, panel_y(744)), c["text"], BIG)
+    text(screen, f"BLACK CELLS {sum(grid.values()):,}", (px + 20, panel_y(776)))
+    text(screen, f"ANT X       {ant_x}", (px + 20, panel_y(800)))
+    text(screen, f"ANT Y       {ant_y}", (px + 20, panel_y(822)))
+    screen.set_clip(None)
     pygame.display.flip()
     clock.tick(FPS)
 
