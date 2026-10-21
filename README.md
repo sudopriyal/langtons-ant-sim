@@ -25,7 +25,7 @@ Despite these simple rules, the system produces complex patterns and eventually 
 
 ## Demo Image
 
-![ANT / LAB — Demo](screenshots/demo.png)
+![ANT / LAB — Demo](demo.png)
 
 ## Requirements
 
