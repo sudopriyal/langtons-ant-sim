@@ -102,4 +102,4 @@ python main.py
 
 ## License
 
-This project is licensed under the MIT License. See the [License](LICENSE) file for details.
+This project is licensed under the MIT License. See the [License](https://github.com/sudopriyal/langtons-ant-sim/blob/main/LICENSE.md) file for details.
