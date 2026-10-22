@@ -25,6 +25,8 @@ Despite these simple rules, the system produces complex patterns and eventually 
 
 ## Demo Image
 
+Live demo: https://sudopriyal.github.io/langtons-ant-sim/
+
 ![ANT / LAB — Demo](demo.png)
 
 ## Requirements
@@ -66,7 +68,7 @@ Despite these simple rules, the system produces complex patterns and eventually 
 Run the Python file containing the simulation:
 
 ```bash
-python langtons_ant.py
+python main.py
 ```
 
 ## Controls
@@ -100,4 +102,4 @@ python langtons_ant.py
 
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the MIT License. See the [License](LICENSE) file for details.
